@@ -25,9 +25,9 @@ Author: Hongrui Zheng
 '''
 
 # gym imports
-import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
+import gymnasium as gym
+from gymnasium import error, spaces, utils
+from gymnasium.utils import seeding
 
 # base classes
 from f110_gym.envs.base_classes import Simulator, Integrator
@@ -184,6 +184,21 @@ class F110Env(gym.Env):
         self.sim = Simulator(self.params, self.num_agents, self.seed, time_step=self.timestep, integrator=self.integrator)
         self.sim.set_map(self.map_path, self.map_ext)
 
+        self.action_space = spaces.Discrete(self.num_agents)
+        self.observation_space = spaces.Dict({
+            'ego_idx': spaces.Discrete(self.num_agents),
+            'scans': spaces.MultiBinary((self.num_agents,1080)),
+            'poses_x': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'poses_y': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'poses_theta': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'linear_vels_x': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'linear_vels_y': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'ang_vels_z': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
+            'collisions': spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64),
+            'lap_times': spaces.Box(low=0, high=100000, shape=(self.num_agents,), dtype=np.int64),
+            'lap_counts': spaces.Box(low=0, high=100000, shape=(self.num_agents,), dtype=np.int64),
+        })
+
         # stateful observations for rendering
         self.render_obs = None
 
@@ -295,7 +310,7 @@ class F110Env(gym.Env):
 
         return obs, reward, done, info
 
-    def reset(self, poses):
+    def reset(self, *, seed=None, options):
         """
         Reset the gym environment by given poses
 
@@ -315,6 +330,8 @@ class F110Env(gym.Env):
         self.near_start = True
         self.near_starts = np.array([True]*self.num_agents)
         self.toggle_list = np.zeros((self.num_agents,))
+
+        poses = options['poses']
 
         # states after reset
         self.start_xs = poses[:, 0]
