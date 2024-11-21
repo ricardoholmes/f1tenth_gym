@@ -554,7 +554,6 @@ class Simulator(object):
             observations (dict): dictionary for observations: poses of agents, current laser scan of each agent, collision indicators, etc.
         """
 
-
         agent_scans = []
 
         # looping over agents
@@ -584,23 +583,18 @@ class Simulator(object):
         # fill in observations
         # state is [x, y, steer_angle, vel, yaw_angle, yaw_rate, slip_angle]
         # collision_angles is removed from observations
-        observations = {'ego_idx': self.ego_idx,
-            'scans': [],
-            'poses_x': [],
-            'poses_y': [],
-            'poses_theta': [],
-            'linear_vels_x': [],
-            'linear_vels_y': [],
-            'ang_vels_z': [],
-            'collisions': self.collisions}
-        for i, agent in enumerate(self.agents):
-            observations['scans'].append(agent_scans[i])
-            observations['poses_x'].append(agent.state[0])
-            observations['poses_y'].append(agent.state[1])
-            observations['poses_theta'].append(agent.state[4])
-            observations['linear_vels_x'].append(agent.state[3])
-            observations['linear_vels_y'].append(0.)
-            observations['ang_vels_z'].append(agent.state[5])
+        states = np.array([agent.state for agent in self.agents])
+        observations = {
+            'ego_idx': self.ego_idx,
+            'scans': np.array(agent_scans),
+            'poses_x': states[:,0],
+            'poses_y': states[:,1],
+            'poses_theta': states[:,4],
+            'linear_vels_x': states[:,3],
+            'linear_vels_y': np.zeros(len(states)),
+            'ang_vels_z': states[:,5],
+            'collisions': self.collisions
+        }
 
         return observations
 

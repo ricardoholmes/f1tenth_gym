@@ -154,9 +154,9 @@ class F110Env(gym.Env):
         self.start_thresh = 0.5  # 10cm
 
         # env states
-        self.poses_x = []
-        self.poses_y = []
-        self.poses_theta = []
+        self.poses_x = np.empty(0)
+        self.poses_y = np.empty(0)
+        self.poses_theta = np.empty(0)
         self.collisions = np.zeros((self.num_agents, ))
         # TODO: collision_idx not used yet
         # self.collision_idx = -1 * np.ones((self.num_agents, ))
@@ -187,16 +187,16 @@ class F110Env(gym.Env):
         self.action_space = spaces.Discrete(self.num_agents)
         self.observation_space = spaces.Dict({
             'ego_idx': spaces.Discrete(self.num_agents),
-            'scans': spaces.MultiBinary((self.num_agents,1080)),
+            'scans': spaces.Box(low=0, high=30, shape=(self.num_agents,1080), dtype=np.float64),
             'poses_x': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
             'poses_y': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
             'poses_theta': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
             'linear_vels_x': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
             'linear_vels_y': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
             'ang_vels_z': spaces.Sequence(spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64)),
-            'collisions': spaces.Box(low=-1000, high=1000, shape=(self.num_agents,), dtype=np.float64),
-            'lap_times': spaces.Box(low=0, high=100000, shape=(self.num_agents,), dtype=np.int64),
-            'lap_counts': spaces.Box(low=0, high=100000, shape=(self.num_agents,), dtype=np.int64),
+            'collisions': spaces.Box(low=0, high=1, shape=(self.num_agents,), dtype=np.float64),
+            'lap_times': spaces.Box(low=0, high=10000, shape=(self.num_agents,), dtype=np.float64),
+            'lap_counts': spaces.Box(low=0, high=10000, shape=(self.num_agents,), dtype=np.float64),
         })
 
         # stateful observations for rendering
@@ -295,7 +295,7 @@ class F110Env(gym.Env):
             'poses_theta': obs['poses_theta'],
             'lap_times': obs['lap_times'],
             'lap_counts': obs['lap_counts']
-            }
+        }
 
         # times
         reward = self.timestep
@@ -319,8 +319,6 @@ class F110Env(gym.Env):
 
         Returns:
             obs (dict): observation of the current step
-            reward (float, default=self.timestep): step reward, currently is physics timestep
-            done (bool): if the simulation is done
             info (dict): auxillary information dictionary
         """
         # reset counters and data members
@@ -353,9 +351,9 @@ class F110Env(gym.Env):
             'poses_theta': obs['poses_theta'],
             'lap_times': obs['lap_times'],
             'lap_counts': obs['lap_counts']
-            }
-        
-        return obs, reward, done, info
+        }
+
+        return obs, info
 
     def update_map(self, map_path, map_ext):
         """
